@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neat_and_clean_calendar/date_picker_config.dart';
 import 'package:flutter_neat_and_clean_calendar/provider_image.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import './date_utils.dart';
 import './simple_gesture_detector.dart';
 import './calendar_tile.dart';
@@ -485,87 +486,68 @@ class _CalendarState extends State<Calendar> {
     if (widget.datePickerType != null &&
         widget.datePickerType != DatePickerType.hidden) {
       jumpDateIcon = PlatformIconButton(
-        onPressed: () {
-          showDatePicker(
-                  builder: (BuildContext context, Widget? child) {
-                    // Define Light Theme
-                    ThemeData lightTheme = widget.datePickerLightTheme ??
-                        ThemeData.light().copyWith(
-                          colorScheme: ColorScheme.light(
-                            primary: Colors.blue,
-                            onPrimary: Colors.white,
-                            surface: Colors.white,
-                            onSurface: Colors.black,
-                          ),
-                          textButtonTheme: TextButtonThemeData(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red,
-                            ),
-                          ),
-                        );
+        onPressed: () async {
+          final selectedDate = await showDialog<DateTime>(
+            context: context,
+            builder: (BuildContext context) {
+              final isDark = isDarkMode;
+              final theme = isDark
+                  ? (widget.datePickerDarkTheme ?? ThemeData.dark())
+                  : (widget.datePickerLightTheme ?? ThemeData.light());
 
-                    // Define Dark Theme
-                    ThemeData darkTheme = widget.datePickerDarkTheme ??
-                        ThemeData.dark().copyWith(
-                          colorScheme: ColorScheme.dark(
-                            primary: Colors.blue,
-                            onPrimary: Colors.white,
-                            surface: Colors.grey,
-                            onSurface: Colors.white,
-                          ),
-                          textButtonTheme: TextButtonThemeData(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.yellow,
-                            ),
-                          ),
-                        );
+              return Theme(
+                data: theme,
+                child: AlertDialog(
+                  title: Text('Select a date'),
+                  content: SizedBox(
+                    height: 300,
+                    child: SfDateRangePicker(
+                      selectionMode: DateRangePickerSelectionMode.single,
+                      initialSelectedDate: _selectedDate,
+                      onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
+                        // Temporarily store the date
+                        Navigator.of(context).pop(args.value as DateTime);
+                      },
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text("Cancel"),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
 
-                    // Choose the theme based on the current mode
-                    return Theme(
-                      data: isDarkMode ? darkTheme : lightTheme,
-                      child: child!,
-                    );
-                  },
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(1900),
-                  lastDate: DateTime(2100),
-                  initialDatePickerMode:
-                      widget.datePickerType == DatePickerType.date
-                          ? DatePickerMode.day
-                          : DatePickerMode.year)
-              .then((date) {
-            if (date != null) {
-              // The selected date is printed to the console in ISO 8601 format for debugging purposes.
-              // The "onJumpToDateSelected" callback is then invoked with the selected date.
-              // These lines have been moved outside of the "setState" block to
-              // trigger the callback methods (i.e. onMonthChanged) in the parent widget.
-              // After the callback methods are invoked, the "setState" block is called and the
-              // _selectedDate is updated. This must be done after the callback methods are invoked,
-              // otherwise the callback methods will not trigger, if the current date is equal to the
-              // selected date.
-              widget.onPrintLog != null
-                  ? widget.onPrintLog!(
-                      'Date chosen: ${_selectedDate.toIso8601String()}')
-                  : print('Date chosen: ${_selectedDate.toIso8601String()}');
-              onJumpToDateSelected(date);
-              setState(() {
-                _selectedDate = date;
-                selectedMonthsDays = _daysInMonth(_selectedDate);
-                selectedWeekDays = Utils.daysInRange(
-                        _firstDayOfWeek(_selectedDate),
-                        _lastDayOfWeek(_selectedDate))
-                    .toList();
-                var monthFormat = DateFormat('MMMM yyyy', widget.locale)
-                    .format(_selectedDate);
-                displayMonth =
-                    '${monthFormat[0].toUpperCase()}${monthFormat.substring(1)}';
-                _selectedEvents = eventsMap?[DateTime(_selectedDate.year,
-                        _selectedDate.month, _selectedDate.day)] ??
-                    [];
-              });
-            }
-          });
+          if (selectedDate != null) {
+            widget.onPrintLog != null
+                ? widget.onPrintLog!(
+                'Date chosen: ${selectedDate.toIso8601String()}')
+                : print('Date chosen: ${selectedDate.toIso8601String()}');
+
+            onJumpToDateSelected(selectedDate);
+
+            setState(() {
+              _selectedDate = selectedDate;
+              selectedMonthsDays = _daysInMonth(_selectedDate);
+              selectedWeekDays = Utils.daysInRange(
+                _firstDayOfWeek(_selectedDate),
+                _lastDayOfWeek(_selectedDate),
+              ).toList();
+              var monthFormat =
+              DateFormat('MMMM yyyy', widget.locale).format(_selectedDate);
+              displayMonth =
+              '${monthFormat[0].toUpperCase()}${monthFormat.substring(1)}';
+              _selectedEvents = eventsMap?[DateTime(
+                _selectedDate.year,
+                _selectedDate.month,
+                _selectedDate.day,
+              )] ??
+                  [];
+            });
+          }
         },
         icon: Icon(
           Icons.date_range_outlined,
