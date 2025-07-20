@@ -497,25 +497,38 @@ class _CalendarState extends State<Calendar> {
 
               return Theme(
                 data: theme,
-                child: AlertDialog(
-                  title: Text('Select a date'),
-                  content: SizedBox(
-                    height: 300,
-                    child: SfDateRangePicker(
-                      selectionMode: DateRangePickerSelectionMode.single,
-                      initialSelectedDate: _selectedDate,
-                      onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
-                        // Temporarily store the date
-                        Navigator.of(context).pop(args.value as DateTime);
-                      },
+                child: Dialog(
+                  insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                  child: Container(
+                    width: 350,
+                    height: 400,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Select a date', style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium?.color)),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: SfDateRangePicker(
+                            selectionMode: DateRangePickerSelectionMode.single,
+                            initialSelectedDate: _selectedDate,
+                            onSelectionChanged:
+                                (DateRangePickerSelectionChangedArgs args) {
+                              Navigator.of(context).pop(args.value as DateTime);
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text("Cancel"),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text("Cancel"),
-                    ),
-                  ],
                 ),
               );
             },
@@ -557,6 +570,7 @@ class _CalendarState extends State<Calendar> {
     } else {
       jumpDateIcon = Container();
     }
+
 
     return Stack(
       alignment: Alignment.center,
